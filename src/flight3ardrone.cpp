@@ -28,6 +28,7 @@ drone_ctrl::drone_ctrl(ros::NodeHandle &nh, ros::NodeHandle &pnh) : nh_(nh)
     pnh.param("eps_xy", eps_xy, 0.3);
     pnh.param("eps_z", eps_z, 0.2);
     pnh.param("eps_yaw", eps_yaw, 0.5);
+    pnh.param("eps_v", eps_v, 0.2);
 
     pub_cmd_1 = nh_.advertise<geometry_msgs::Twist>("/ardrone1/cmd_vel", 1);
     pub_cmd_2 = nh_.advertise<geometry_msgs::Twist>("/ardrone2/cmd_vel", 1);
@@ -58,29 +59,36 @@ drone_ctrl::drone_ctrl(ros::NodeHandle &nh, ros::NodeHandle &pnh) : nh_(nh)
 }
 
 void drone_ctrl::GenCmd(geometry_msgs::Twist &cmd,
-                      const geometry_msgs::Pose &goal_pose,
-                      const geometry_msgs::Pose &pos,
-                      const geometry_msgs::Point &vel,
-                      int ID)
+                        const geometry_msgs::Pose &goal_pose,
+                        const geometry_msgs::PoseStamped &pos,
+                        const geometry_msgs::PointStamped &vel,
+                        int ID)
 {
     cout << "generating the vel cmd of drone:"<< ID << endl;
   
     geometry_msgs::Vector3 euler_tmp;
-    drone_ctrl::Quat2Euler(pos, euler_tmp);
+    geometry_msgs::Quaternion quat_tmp = pos.pose.orientation;
+    drone_ctrl::Quat2Euler(quat_tmp, euler_tmp);
 
     drone_ctrl::PIDPosControl(cmd, goal_pose, pos, vel, euler_tmp.z);
+    if(ID==1)
+        pub_cmd_1.publish(cmd);
+    else if(ID==2)
+        pub_cmd_2.publish(cmd);
+    else if(ID==3)
+        pub_cmd_3.publish(cmd);
+    else
+        cout<<"The ID number is wrong. No cmd_vel will be published."<<endl;
 }
 
-void drone_ctrl::PIDPosControl(geometry_msgs::Twist &velocity_ctrl_,
-                               const geometry_msgs::Pose &goal_pose_,
-                               const geometry_msgs::PoseStamped &current_pose_,
-                               const geometry_msgs::PointStamped &current_vel_,
+void drone_ctrl::PIDPosControl(geometry_msgs::Twist &velocity_ctrl_,\
+                               const geometry_msgs::Pose &goal_pose_,\
+                               const geometry_msgs::PoseStamped &current_pose_,\
+                               const geometry_msgs::PointStamped &current_vel_,\
                                double &yaw)
 {
 
-    double vel_x = current_vel_.point.x;
-    double vel_y = current_vel_.point.y;
-    double vel_z = current_vel_.point.z;
+    double cmd_vel_x, cmd_vel_y, cmd_vel_z, cmd_vel_yaw;
     double error_x, error_y, error_z, error_yaw, error_vx, error_vy, error_vz;
     error_x = goal_pose_.position.x - current_pose_.pose.position.x;
     error_y = goal_pose_.position.y - current_pose_.pose.position.y;
@@ -126,24 +134,81 @@ void drone_ctrl::PIDPosControl(geometry_msgs::Twist &velocity_ctrl_,
         cout << "V_z =:" << velocity_ctrl_.linear.z << "  ";
         cout << "V_yaw =:" << velocity_ctrl_.angular.z << endl;
     }
+
+    //compatiable to ardrone
     velocity_ctrl_.linear.y = -velocity_ctrl_.linear.y;
     velocity_ctrl_.linear.z = -velocity_ctrl_.linear.z;
     velocity_ctrl_.angular.x = 0.0;
     velocity_ctrl_.angular.y = 0.0;
     velocity_ctrl_.angular.z = -velocity_ctrl_.angular.z;
 }
+
+bool drone_ctrl::IsArrived(const geometry_msgs::Pose &target,\
+                         const geometry_msgs::PoseStamped &pose,\
+                         const geometry_msgs::PointStamped &vel)
+{
+    double dis_xy, dis_z, dis_v, dis_yaw;
+    dis_xy = fabsf(target.position.x - pose.pose.position.x) + fabsf(target.position.y - pose.pose.position.y);
+    dis_z = fabsf(target.position.z - pose.pose.position.z);
+    dis_v = fabsf(target.orientation.x - vel.point.x) + fabsf(target.orientation.y - vel.point.y) + fabsf(target.orientation.z - vel.point.z);
+    geometry_msgs::Vector3 euler_tmp;
+    geometry_msgs::Quaternion quat_tmp = pose.pose.orientation;
+    drone_ctrl::Quat2Euler(quat_tmp, euler_tmp);
+    dis_yaw = fabsf(target.orientation.w - euler_tmp.z);
+
+    if ((dis_xy < eps_xy) && (dis_z < eps_z) && (dis_v < eps_v) && (dis_yaw < eps_yaw)) 
+        return true;
+    else
+        return false;
+}
+
 //TODO:
-void bebop_pos_ctrl::BebopPoseCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
+void drone_ctrl::PoseCb_1(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
-    pos_sub = *msg;
+    msg_pos_1 = *msg;
 }
 
-void bebop_pos_ctrl::BebopVelCallback(const geometry_msgs::PointStamped::ConstPtr &msg)
+void drone_ctrl::VelCb_1(const geometry_msgs::PointStamped::ConstPtr &msg)
 {
-    vel_sub = *msg;
+    msg_vel_1 = *msg;
 }
 
-void bebop_pos_ctrl::Quat2Euler(geometry_msgs::Quaternion &quat, geometry_msgs::Vector3 &euler)
+void drone_ctrl::TgtCb_1(const geometry_msgs::Pose::ConstPtr &msg)
+{
+    target_1 = *msg;
+}
+
+void drone_ctrl::PoseCb_2(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
+    msg_pos_2 = *msg;
+}
+
+void drone_ctrl::VelCb_2(const geometry_msgs::PointStamped::ConstPtr &msg)
+{
+    msg_vel_2 = *msg;
+}
+
+void drone_ctrl::TgtCb_2(const geometry_msgs::Pose::ConstPtr &msg)
+{
+    target_2 = *msg;
+}
+
+void drone_ctrl::PoseCb_3(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
+    msg_pos_3 = *msg;
+}
+
+void drone_ctrl::VelCb_3(const geometry_msgs::PointStamped::ConstPtr &msg)
+{
+    msg_vel_3 = *msg;
+}
+
+void drone_ctrl::TgtCb_3(const geometry_msgs::Pose::ConstPtr &msg)
+{
+    target_3 = *msg;
+}
+
+void drone_ctrl::Quat2Euler(geometry_msgs::Quaternion &quat, geometry_msgs::Vector3 &euler)
 {
     double q0 = quat.w;
     double q1 = quat.x;
@@ -162,38 +227,5 @@ void bebop_pos_ctrl::Quat2Euler(geometry_msgs::Quaternion &quat, geometry_msgs::
     euler.x = asin(t2);
     euler.y = -atan2(t3, t4);
     euler.z = atan2(t1, t0);
-}
-
-void bebop_pos_ctrl::Euler2Quat(geometry_msgs::Vector3 &euler, geometry_msgs::Quaternion &quat)
-{
-    double fi = euler.x / 2;
-    double theta = euler.y / 2;
-    double psi = euler.z / 2;
-    quat.w = cos(fi) * cos(theta) * cos(psi) + sin(fi) * sin(theta) * sin(psi);
-    quat.x = sin(fi) * cos(theta) * cos(psi) - cos(fi) * sin(theta) * sin(psi);
-    quat.y = cos(fi) * sin(theta) * cos(psi) + sin(fi) * cos(theta) * sin(psi);
-    quat.z = cos(fi) * cos(theta) * sin(psi) - sin(fi) * sin(theta) * cos(psi);
-}
-void bebop_pos_ctrl::Limitator(double &vx, double &vy, double &vz, double &yawrate)
-{
-    if (vx < (-MaxV_xy))
-        vx = -MaxV_xy;
-    if (vx > MaxV_xy)
-        vx = MaxV_xy;
-
-    if (vy < (-MaxV_xy))
-        vy = -MaxV_xy;
-    if (vy > MaxV_xy)
-        vy = MaxV_xy;
-
-    if (vz < (-MaxV_z))
-        vz = -MaxV_z;
-    if (vz > MaxV_z)
-        vz = MaxV_z;
-
-    if (yawrate < (-MaxV_yaw))
-        yawrate = -MaxV_yaw;
-    if (yawrate > MaxV_yaw)
-        yawrate = MaxV_yaw;
 }
 }

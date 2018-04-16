@@ -31,18 +31,18 @@ class drone_ctrl
     //void FillTargetList();
     void GenCmd(geometry_msgs::Twist &cmd,
                 const geometry_msgs::Pose &goal_pose,
-                const geometry_msgs::Pose &pos,
-                const geometry_msgs::Point &vel,
+                const geometry_msgs::PoseStamped &pos,
+                const geometry_msgs::PointStamped &vel,
                 int ID);
-    void PIDPosControl(geometry_msgs::Twist &velocity_ctrl_,
-                       const geometry_msgs::Pose &goal_pose_,
-                       const geometry_msgs::PoseStamped &current_pose_,
-                       const geometry_msgs::PointStamped &current_vel_,
+    void PIDPosControl(geometry_msgs::Twist &velocity_ctrl_,\
+                       const geometry_msgs::Pose &goal_pose_,\
+                       const geometry_msgs::PoseStamped &current_pose_,\
+                       const geometry_msgs::PointStamped &current_vel_,\
                        double &yaw);
     //void PIDinit();
     void Quat2Euler(geometry_msgs::Quaternion &quat, geometry_msgs::Vector3 &euler);
-    bool IsArrived(const geometry_msgs::Pose &target,
-                   const geometry_msgs::PoseStamped &pose,
+    bool IsArrived(const geometry_msgs::Pose &target,\
+                   const geometry_msgs::PoseStamped &pose,\
                    const geometry_msgs::PointStamped &vel);
 
     void PoseCb_1(const geometry_msgs::PoseStamped::ConstPtr &msg);
@@ -81,18 +81,18 @@ class drone_ctrl
     int num_point;
     double Hz;
     int time_hover;
-    bool debug = true;
-    double min_xy = 0.5;
-    double max_xy = 3.5;
-    double min_z = 0.8;
-    double max_z = 2.5;
-    double default_z = 1.2;
-    double cmd_xy_max = 0.5;
-    double cmd_z_max = 0.5;
-    double cmd_yaw_max = 0.5;
+    bool debug;
+    double min_xy;
+    double max_xy;
+    double min_z;
+    double max_z;
+    double default_z;
+    double cmd_xy_max;
+    double cmd_z_max;
+    double cmd_yaw_max;
 
     double K_p_xy, K_d_xy, K_p_z, K_d_z, K_p_yaw;
-    double eps_xy, eps_z, eps_yaw; // yaw:rad  xyz:m
+    double eps_xy, eps_z, eps_yaw, eps_v; // yaw:rad  xyz:m
 
     double del_t; //second: s
 

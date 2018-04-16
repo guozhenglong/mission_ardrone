@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="mission_drone_ctrl_node" pkg="flight3ardrone" type="mission_drone_ctrl_node" output="screen">
+
+        <param name="Hz" value="10" />
+        <param name="time_hover" value="100000" />
+        <param name="debug" value="true" />
+
+        <param name="K_p_xy" value="0.2" />
+        <param name="K_d_xy" value="0.2" />
+        <param name="K_p_z" value="0.2" />
+        <param name="K_d_z" value="0.2" />
+        <param name="K_p_yaw" value="0.2" />
+
+        <param name="min_xy" value="0.5" />
+        <param name="max_xy" value="3.5" />
+        <param name="min_z" value="0.8" />
+        <param name="max_z" value="2.5" />
+        <param name="default_z" value="1.2" />
+
+        <param name="cmd_xy_max" value="0.5" />
+        <param name="cmd_z_max" value="0.5" />
+        <param name="cmd_yaw_max" value="0.5" />
+
+        <param name="eps_xy" value="0.3" />
+        <param name="eps_z" value="0.2" />
+        <param name="eps_yaw" value="0.5" />
+        <param name="eps_v" value="0.2" />
+
+    </node>
+</launch>
