@@ -12,7 +12,7 @@ def pub_target():
     pub_tgt_2 = rospy.Publisher('/target2', Pose, queue_size=10)
     pub_tgt_3 = rospy.Publisher('/target3', Pose, queue_size=10)
     Hz = 20
-    r = rospy.Rate(Hz)
+    rate = rospy.Rate(Hz)
     msg_tgt_1 = Pose()
     msg_tgt_2 = Pose()
     msg_tgt_3 = Pose()
@@ -69,7 +69,7 @@ def pub_target():
         pub_tgt_3.publish(msg_tgt_3)
 
         q = q + dq
-        r.sleep()
+        rate.sleep()
 
 
 

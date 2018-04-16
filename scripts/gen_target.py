@@ -9,7 +9,7 @@ def pub_target():
     pub_tgt_1 = rospy.Publisher('/target1', Pose, queue_size=10)
     pub_tgt_2 = rospy.Publisher('/target2', Pose, queue_size=10)
     pub_tgt_3 = rospy.Publisher('/target3', Pose, queue_size=10)
-    r = rospy.Rate(20) 
+    rate = rospy.Rate(20) 
 
     while not rospy.is_shutdown():
         msg_tgt_1 = Pose()
@@ -43,7 +43,7 @@ def pub_target():
         pub_tgt_1.publish(msg_tgt_1)
         pub_tgt_2.publish(msg_tgt_2)
         pub_tgt_3.publish(msg_tgt_3)
-        r.sleep()
+        rate.sleep()
 
 if __name__ == '__main__':
     try:
